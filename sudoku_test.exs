@@ -42,6 +42,12 @@ defmodule SudokuTest do
     assert Sudoku.column(base,0) == column
   end
 
+  test "get block 2 (0 indexed, reading left to right from base sudoku board", state do
+    base = state[ :base ]
+    block = [ nil, nil, 2, 6, 5, 4, 9, 7, 1 ]
+    assert Sudoku.block(base,2) == block
+  end
+
   test "find blank positions" do
     zero  = [ 9,   nil, 4,   nil, 7,   nil, nil, nil, 2   ]
     assert Sudoku.blank_positions(zero) == [ 1, 3, 5, 6, 7 ]
@@ -52,8 +58,21 @@ defmodule SudokuTest do
     assert Sudoku.blank_positions(zero) == []
   end
 
-  test "returns missing numbers for a row" do
-
+  test "returns missing numbers for a column", state do
+    assert Sudoku.possibilities(state[:base], {:column, 0})  == [2,3,4,6,7,8]
   end
+
+  test "returns missing numbers for a row", state do
+    assert Sudoku.possibilities(state[:base], {:row, 0})  == [1,3,5,6,8]
+  end
+
+  test "returns missing numbers for a block", state do
+    assert Sudoku.possibilities(state[:base], {:block, 2})  == [3,8]
+  end
+
+  test "returns missing numbers for a block", state do
+    assert Sudoku.possibilities(state[:base], {:block, row: 0, column: 6 })  == [3]
+  end
+
 
 end
