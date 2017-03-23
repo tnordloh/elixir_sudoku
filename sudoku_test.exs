@@ -7,6 +7,7 @@ defmodule SudokuTemplate do
   use ExUnit.CaseTemplate
 
   setup do
+    base_string = "9 4 7   2\n  239 654\n   6  971\n    37549\n5972 6 8 \n 41      \n   8132 5\n1854 23  \n 36 594 8"
     zero  = [ 9,   nil, 4,   nil, 7,   nil, nil, nil, 2   ]
     one   = [ nil, nil, 2,   3,   9,   nil, 6,   5,   4   ]
     two   = [ nil, nil, nil, 6,   nil, nil, 9,   7,   1   ]
@@ -20,7 +21,9 @@ defmodule SudokuTemplate do
             [ 9,   nil, 4,   nil, 7,   nil, 8, nil, 2   ]
     base  = [zero, one, two, three, four, five, six, seven, eight]
     base_after_insert  = [zero_after_insert, one, two, three, four, five, six, seven, eight]
-    { :ok, base: base , base_after_insert: base_after_insert }
+    { :ok, base: base,
+      base_after_insert: base_after_insert,
+      base_string: base_string }
   end
 end
 
@@ -48,12 +51,17 @@ defmodule SudokuTest do
   end
 
   test "can stream cells with indexes" do
-    zero  = [[ 9,   nil, 4  ]]
-    assert Sudoku.cells_with_index(zero) == [ [0,0,9], [0,1,nil], [0,2,4] ]
+    zero  = [[ 9,   nil, 4  ],[1,2,3]]
+    assert Sudoku.cells_with_index(zero) == [ [0,0,9], [0,1,nil], [0,2,4], 
+                                              [1,0,1], [1,1,2  ], [1,2,3] ]
   end
 
   test "can fill a cell with only one variable to fill", %{base: base, base_after_insert: base_after_insert} do
     assert Sudoku.fill_cell(base) == base_after_insert
+  end
+
+  test "can identify an unsolved puzzle", %{base: base} do
+    assert Sudoku.unsolved?(base) == true
   end
 
   test "can find a cell with only one variable to fill", %{base: base} do
@@ -85,6 +93,10 @@ defmodule SudokuTest do
 
   test "returns missing numbers row/column/block", state do
     assert Sudoku.possibilities(state[:base], {:cell, 0, 6 })  == [8]
+  end
+
+  test "can read a string into a sudoku map", %{base: base, base_string: base_string } do
+    assert Sudoku.map(base_string) == base
   end
 
 

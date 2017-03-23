@@ -1,5 +1,46 @@
 defmodule Sudoku do
 
+  def map(string) do
+    String.codepoints(string)
+    |> Enum.reduce([], fn(cell, acc) -> 
+      if cell == "\n" || cell == 10 do
+        acc
+      else
+        acc ++ [ cell ]
+      end
+    end)
+    |> Enum.map( fn(cell) ->
+      if cell == " " do
+        nil
+      else
+        String.to_integer(cell)
+      end
+    end)
+    |> Enum.chunk(9)
+  end
+
+  defp row_to_s(row) do
+    row
+    |> Enum.map(fn(cell) ->
+      if cell == nil do
+        " "
+      else
+        cell
+      end
+    end) 
+    |> List.insert_at(6,"|")
+    |> List.insert_at(3,"|")
+    |> Enum.join("")
+  end
+
+  def to_s(list) do
+    list
+    |> Enum.map( fn(row) -> "|#{row_to_s(row)}|" end)
+    |> List.insert_at(6, "-------------")
+    |> List.insert_at(3, "-------------")
+    |> Enum.join("\n")
+  end
+
   def row(list, number) do 
     {:ok, rv } = Enum.fetch( list,number )
     rv
@@ -15,7 +56,17 @@ defmodule Sudoku do
         [row_index, column_index, cell]
       end ) 
     end )
-    |> hd
+    |> List.flatten
+    |> Enum.chunk(3)
+  end
+
+  def unsolved?(list) do
+    list
+    |> cells_with_index
+    |> Enum.any?(fn(cell) ->
+      [_, _, value] = cell
+      value == nil
+    end)
   end
 
   def column(list, number) do 
@@ -51,10 +102,10 @@ defmodule Sudoku do
   def fill_cell(list) do
     [ target_row, target_column ] = fillable_cell(list)
     row = Enum.fetch!(list,target_row)
-    
+
     modified_row = List.replace_at(row,
-                    target_column,
-                    List.first(possibilities(list, { :cell, target_row, target_column })) )
+                                   target_column,
+                                   List.first(possibilities(list, { :cell, target_row, target_column })) )
     List.replace_at(list, target_row, modified_row)
   end
 
