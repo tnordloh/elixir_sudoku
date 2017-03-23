@@ -41,13 +41,13 @@ defmodule SudokuTest do
   end
 
   test "get block 2 (0 indexed, reading left to right)", %{base: base} do 
-    block = [ nil, nil, 2, 6, 5, 4, 9, 7, 1 ]
-    assert Sudoku.block(base,2) == block
+    block = Enum.sort([ nil, nil, 2, 6, 5, 4, 9, 7, 1 ])
+    assert Enum.sort(Sudoku.block(base,2)) == block
   end
 
   test "get block that contains cell 0,6", %{base: base} do
-    block = [ nil, nil, 2, 6, 5, 4, 9, 7, 1 ]
-    assert Sudoku.block(base,0,6) == block
+    block = [ nil, nil, 2, 6, 5, 4, 9, 7, 1 ] |> Enum.sort
+    assert Sudoku.block(base,0,6)|>Enum.sort == block
   end
 
   test "can stream cells with indexes" do
@@ -62,6 +62,11 @@ defmodule SudokuTest do
 
   test "can identify an unsolved puzzle", %{base: base} do
     assert Sudoku.unsolved?(base) == true
+  end
+
+  test "turns the board into a map", %{base: base} do
+    assert Sudoku.to_map(base)[[0,0,0]] == 9
+    assert Sudoku.to_map(base)[[7,0,6]] == 1
   end
 
   test "can find a cell with only one variable to fill", %{base: base} do

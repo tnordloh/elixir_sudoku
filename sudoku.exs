@@ -1,14 +1,7 @@
 defmodule Sudoku do
 
-  def map(string) do
-    String.codepoints(string)
-    |> Enum.reduce([], fn(cell, acc) -> 
-      if cell == "\n" || cell == 10 do
-        acc
-      else
-        acc ++ [ cell ]
-      end
-    end)
+  def map(raw_data) when is_list(raw_data) do
+    raw_data
     |> Enum.map( fn(cell) ->
       if cell == " " do
         nil
@@ -17,6 +10,28 @@ defmodule Sudoku do
       end
     end)
     |> Enum.chunk(9)
+  end
+
+  def map(string) when is_binary(string) do
+    String.codepoints(string)
+    |> Enum.reduce([], fn(cell, acc) -> 
+      if cell == "\n" || cell == 10 do
+        acc
+      else
+        acc ++ [ cell ]
+      end
+    end)
+    |> map
+  end
+
+  def to_map(list) do
+    list
+    |> cells_with_index
+    |> Enum.reduce(%{}, fn(cell, acc) -> 
+      [row, column, value] = cell
+      block = div(row,3) * 3 + div(column,3)
+      Map.merge(acc, %{ [row, column, block] => value} )
+    end)
   end
 
   defp row_to_s(row) do
@@ -77,15 +92,14 @@ defmodule Sudoku do
     block(list,div(row,3) * 3 + div(column,3) )
   end
   def block(list, number) do
-    rows    = (div(number,3) * 3)..(div(number,3) * 3 + 2)
-    column = rem(number,3)
-    rows 
-    |> Enum.map( fn(row_index) -> 
-      Enum.fetch!(list,row_index)
-      |> Enum.chunk(3)
-      |> Enum.fetch!(column)
+    to_map(list)
+    |> Map.keys
+    |> Enum.filter( fn([_,_,block]) -> 
+      block == number
     end)
-    |> List.flatten()
+    |> Enum.map(fn(key) -> 
+      to_map(list)[key]
+    end)
   end
 
   def blank_positions(list) do
