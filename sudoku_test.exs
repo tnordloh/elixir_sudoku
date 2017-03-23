@@ -17,10 +17,9 @@ defmodule SudokuTemplate do
     six   = [ nil, nil, nil,   8,   1,   3,   2, nil,   5 ]
     seven = [   1,   8,   5,   4, nil,   2,   3, nil, nil ]
     eight = [ nil,   3,   6, nil,   5,   9,   4, nil,   8 ]
-    zero_after_insert = 
-            [ 9,   nil, 4,   nil, 7,   nil, 8, nil, 2   ]
+    eight_after_insert = [ nil,   3,   6, 7,   5,   9,   4, nil,   8 ]
     base  = [zero, one, two, three, four, five, six, seven, eight]
-    base_after_insert  = [zero_after_insert, one, two, three, four, five, six, seven, eight]
+    base_after_insert  = [zero, one, two, three, four, five, six, seven, eight_after_insert]
     { :ok, base: base,
       base_after_insert: base_after_insert,
       base_string: base_string }
@@ -32,11 +31,11 @@ defmodule SudokuTest do
   use SudokuTemplate, async: true
 
   test "get row 0 from base sudoku board", %{base: base} do
-    assert Sudoku.row(base,0) == Enum.fetch(base,0) |> elem(1)
+    assert Sudoku.row(base,0) == Enum.fetch(base,0) |> elem(1) |> Enum.sort
   end
 
   test "get column 0 from base sudoku board", %{base: base} do
-    column = [ 9, nil, nil, nil, 5, nil, nil, 1, nil ]
+    column = [ 9, nil, nil, nil, 5, nil, nil, 1, nil ] |> Enum.sort
     assert Sudoku.column(base,0) == column
   end
 
@@ -51,9 +50,8 @@ defmodule SudokuTest do
   end
 
   test "can stream cells with indexes" do
-    zero  = [[ 9,   nil, 4  ],[1,2,3]]
-    assert Sudoku.cells_with_index(zero) == [ [0,0,9], [0,1,nil], [0,2,4], 
-                                              [1,0,1], [1,1,2  ], [1,2,3] ]
+    zero  = [[ 9,   nil, 4  ]]
+    assert Sudoku.cells_with_index(zero) == [ [0,0,9], [0,1,nil], [0,2,4]  ]
   end
 
   test "can fill a cell with only one variable to fill", %{base: base, base_after_insert: base_after_insert} do
@@ -70,30 +68,17 @@ defmodule SudokuTest do
   end
 
   test "can find a cell with only one variable to fill", %{base: base} do
-    assert Sudoku.fillable_cell(base) == [ 0, 6 ]
+    assert Sudoku.fillable_cell(base) == [ 8,3,7 ]
   end
 
   test "find blank positions" do
     zero  = [[ 9,   nil, 4,   nil, 7,   nil, nil, nil, 2   ]]
-    assert Sudoku.blank_positions(zero) == [ [0,1], [0,3], [0,5], [0,6], [0,7] ]
+    assert Sudoku.blank_positions(zero) == [ [0,1,0], [0,3,1], [0,5,1], [0,6,2], [0,7,2] ]
   end
 
   test "correctly return no blank positions" do
     zero  = [[ 9, 4, 7, 2 ]]
     assert Sudoku.blank_positions(zero) == []
-  end
-
-  test "returns missing numbers for a column", state do
-    assert Sudoku.possibilities(state[:base], {:column, 0})  == [2,3,4,6,7,8]
-  end
-
-  test "returns missing numbers for a row", state do
-    assert Sudoku.possibilities(state[:base], {:row, 0})  == [1,3,5,6,8]
-  end
-
-
-  test "returns missing numbers for a block", state do
-    assert Sudoku.possibilities(state[:base], {:block, 2})  == [3,8]
   end
 
   test "returns missing numbers row/column/block", state do
