@@ -18,8 +18,10 @@ defmodule Solver do
     end
   end
   def solve(list, solved) do
+    IO.puts "solution found" if solved solved
+    #The solved variable is just to complete this crappy while loop.
+    #I used the 'puts' to kill the 'unused variable' warning.
     IO.puts Sudoku.to_s(list)
-    IO.puts solved
   end
 end
 
