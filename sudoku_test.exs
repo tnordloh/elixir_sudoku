@@ -16,20 +16,17 @@ defmodule SudokuTemplate do
     six   = [ nil, nil, nil,   8,   1,   3,   2, nil,   5 ]
     seven = [   1,   8,   5,   4, nil,   2,   3, nil, nil ]
     eight = [ nil,   3,   6, nil,   5,   9,   4, nil,   8 ]
+    zero_after_insert = 
+            [ 9,   nil, 4,   nil, 7,   nil, 8, nil, 2   ]
     base  = [zero, one, two, three, four, five, six, seven, eight]
-    { :ok, base: base }
+    base_after_insert  = [zero_after_insert, one, two, three, four, five, six, seven, eight]
+    { :ok, base: base , base_after_insert: base_after_insert }
   end
 end
 
 defmodule SudokuTest do
   use ExUnit.Case
   use SudokuTemplate, async: true
-
-  test "create sudoku board", state do
-    base = state[ :base ]
-    assert Sudoku.create(base) == base
-
-  end
 
   test "get row 0 from base sudoku board", state do
     base = state[ :base ]
@@ -48,13 +45,32 @@ defmodule SudokuTest do
     assert Sudoku.block(base,2) == block
   end
 
+  test "get block that contains cell 0,6", state do
+    base = state[ :base ]
+    block = [ nil, nil, 2, 6, 5, 4, 9, 7, 1 ]
+    assert Sudoku.block(base,0,6) == block
+  end
+
+  test "can stream cells with indexes" do
+    zero  = [[ 9,   nil, 4  ]]
+    assert Sudoku.cells_with_index(zero) == [ [0,0,9], [0,1,nil], [0,2,4] ]
+  end
+
+  test "can fill a cell with only one variable to fill", %{base: base, base_after_insert: base_after_insert} do
+    assert Sudoku.fill_cell(base) == base_after_insert
+  end
+
+  test "can find a cell with only one variable to fill", %{base: base} do
+    assert Sudoku.fillable_cell(base) == [ 0, 6 ]
+  end
+
   test "find blank positions" do
-    zero  = [ 9,   nil, 4,   nil, 7,   nil, nil, nil, 2   ]
-    assert Sudoku.blank_positions(zero) == [ 1, 3, 5, 6, 7 ]
+    zero  = [[ 9,   nil, 4,   nil, 7,   nil, nil, nil, 2   ]]
+    assert Sudoku.blank_positions(zero) == [ [0,1], [0,3], [0,5], [0,6], [0,7] ]
   end
 
   test "correctly return no blank positions" do
-    zero  = [ 9, 4, 7, 2 ]
+    zero  = [[ 9, 4, 7, 2 ]]
     assert Sudoku.blank_positions(zero) == []
   end
 
@@ -66,12 +82,13 @@ defmodule SudokuTest do
     assert Sudoku.possibilities(state[:base], {:row, 0})  == [1,3,5,6,8]
   end
 
+
   test "returns missing numbers for a block", state do
     assert Sudoku.possibilities(state[:base], {:block, 2})  == [3,8]
   end
 
-  test "returns missing numbers for a block", state do
-    assert Sudoku.possibilities(state[:base], {:block, row: 0, column: 6 })  == [3]
+  test "returns missing numbers row/column/block", state do
+    assert Sudoku.possibilities(state[:base], {:cell, 0, 6 })  == [8]
   end
 
 
