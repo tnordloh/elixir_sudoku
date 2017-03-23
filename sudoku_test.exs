@@ -28,25 +28,21 @@ defmodule SudokuTest do
   use ExUnit.Case
   use SudokuTemplate, async: true
 
-  test "get row 0 from base sudoku board", state do
-    base = state[ :base ]
+  test "get row 0 from base sudoku board", %{base: base} do
     assert Sudoku.row(base,0) == Enum.fetch(base,0) |> elem(1)
   end
 
-  test "get column 0 from base sudoku board", state do
-    base = state[ :base ]
+  test "get column 0 from base sudoku board", %{base: base} do
     column = [ 9, nil, nil, nil, 5, nil, nil, 1, nil ]
     assert Sudoku.column(base,0) == column
   end
 
-  test "get block 2 (0 indexed, reading left to right from base sudoku board", state do
-    base = state[ :base ]
+  test "get block 2 (0 indexed, reading left to right)", %{base: base} do 
     block = [ nil, nil, 2, 6, 5, 4, 9, 7, 1 ]
     assert Sudoku.block(base,2) == block
   end
 
-  test "get block that contains cell 0,6", state do
-    base = state[ :base ]
+  test "get block that contains cell 0,6", %{base: base} do
     block = [ nil, nil, 2, 6, 5, 4, 9, 7, 1 ]
     assert Sudoku.block(base,0,6) == block
   end
