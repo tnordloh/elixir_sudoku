@@ -40,7 +40,7 @@ defmodule Sudoku do
     |> cells_with_index
     |> Enum.map(fn([_,cell]) -> cell end)
     |> Enum.chunk(9)
-    |> Enum.map(fn(row) -> row_to_s(row) end)
+    |> Enum.map(&(row_to_s(&1)))
     |> Enum.join("\n")
   end
 
@@ -48,16 +48,14 @@ defmodule Sudoku do
     board
     |> Map.keys
     |> Enum.sort
-    |> Enum.map(fn(key) -> [key, board[key]] end)
+    |> Enum.map(&([&1, board[&1]]))
   end
 
   def unsolved?(board) do
-    board
-    |> Map.values
-    |> Enum.any?(fn(value) -> value == nil end)
+    values(Map.keys(board), board)
+    |> Enum.any?(&(&1 == nil))
   end
 
-  def values(board), do: values(Map.keys(board), board)
   def values(cell_addresses, board) do
     board
     |> Map.take(cell_addresses)
@@ -90,7 +88,7 @@ defmodule Sudoku do
   def blank_positions(board) do
     board
     |> Map.keys
-    |> Enum.filter(fn( key ) -> board[key] == nil end)
+    |> Enum.filter(&(board[&1] == nil))
   end
 
   def fill_cell(board) do
