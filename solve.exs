@@ -3,7 +3,7 @@ Code.load_file("sudoku.exs", __DIR__)
 {:ok, file} = File.read "sudoku_map.txt"
 
 IO.puts(file)
-sudoku_map = Sudoku.map(file)
+sudoku_map = Sudoku.to_board(file) |> Sudoku.to_map
 
 
 defmodule Solver do

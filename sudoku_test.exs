@@ -31,35 +31,36 @@ defmodule SudokuTest do
   use SudokuTemplate, async: true
 
   test "get row 0 from base sudoku board", %{base: base} do
-    assert Sudoku.row(base,0) == Enum.fetch(base,0) |> elem(1) |> Enum.sort
+    assert Sudoku.row(Sudoku.to_map(base),0) == Enum.fetch(base,0) |> elem(1) |> Enum.sort
   end
 
   test "get column 0 from base sudoku board", %{base: base} do
     column = [ 9, nil, nil, nil, 5, nil, nil, 1, nil ] |> Enum.sort
-    assert Sudoku.column(base,0) == column
+    assert Sudoku.column(Sudoku.to_map(base),0) == column
   end
 
   test "get block 2 (0 indexed, reading left to right)", %{base: base} do 
     block = Enum.sort([ nil, nil, 2, 6, 5, 4, 9, 7, 1 ])
-    assert Enum.sort(Sudoku.block(base,2)) == block
+    assert Enum.sort(Sudoku.block(Sudoku.to_map(base),2)) == block
   end
 
   test "get block that contains cell 0,6", %{base: base} do
     block = [ nil, nil, 2, 6, 5, 4, 9, 7, 1 ] |> Enum.sort
-    assert Sudoku.block(base,0,6)|>Enum.sort == block
+    assert Sudoku.block(Sudoku.to_map(base),0,6)|>Enum.sort == block
   end
 
   test "can stream cells with indexes" do
     zero  = [[ 9,   nil, 4  ]]
-    assert Sudoku.cells_with_index(zero) == [ [0,0,9], [0,1,nil], [0,2,4]  ]
+    assert Sudoku.cells_with_index(Sudoku.to_map(zero)) ==
+      [ [[0,0,0],9], [[0,1,0],nil], [[0,2,0],4]  ]
   end
 
   test "can fill a cell with only one variable to fill", %{base: base, base_after_insert: base_after_insert} do
-    assert Sudoku.fill_cell(base) == base_after_insert
+    assert Sudoku.fill_cell(Sudoku.to_map(base)) == base_after_insert |> Sudoku.to_map
   end
 
   test "can identify an unsolved puzzle", %{base: base} do
-    assert Sudoku.unsolved?(base) == true
+    assert Sudoku.unsolved?(Sudoku.to_map(base)) == true
   end
 
   test "turns the board into a map", %{base: base} do
@@ -68,25 +69,25 @@ defmodule SudokuTest do
   end
 
   test "can find a cell with only one variable to fill", %{base: base} do
-    assert Sudoku.fillable_cell(base) == [ 8,3,7 ]
+    assert Sudoku.fillable_cell(Sudoku.to_map(base)) == [ 8,3,7 ]
   end
 
   test "find blank positions" do
     zero  = [[ 9,   nil, 4,   nil, 7,   nil, nil, nil, 2   ]]
-    assert Sudoku.blank_positions(zero) == [ [0,1,0], [0,3,1], [0,5,1], [0,6,2], [0,7,2] ]
+    assert Sudoku.blank_positions(Sudoku.to_map(zero)) == [ [0,1,0], [0,3,1], [0,5,1], [0,6,2], [0,7,2] ]
   end
 
   test "correctly return no blank positions" do
     zero  = [[ 9, 4, 7, 2 ]]
-    assert Sudoku.blank_positions(zero) == []
+    assert Sudoku.blank_positions(Sudoku.to_map(zero)) == []
   end
 
   test "returns missing numbers row/column/block", state do
-    assert Sudoku.possibilities(state[:base], {:cell, 0, 6 })  == [8]
+    assert Sudoku.possibilities(Sudoku.to_map(state[:base]), {:cell, 0, 6 })  == [8]
   end
 
   test "can read a string into a sudoku map", %{base: base, base_string: base_string } do
-    assert Sudoku.map(base_string) == base
+    assert Sudoku.to_board(base_string)  == base
   end
 
 

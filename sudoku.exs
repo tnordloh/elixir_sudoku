@@ -1,27 +1,18 @@
 defmodule Sudoku do
 
-  def map(raw_data) when is_list(raw_data) do
+  def to_board(raw_data) when is_list(raw_data) do
     raw_data
     |> Enum.map( fn(cell) ->
-      if cell == " " do
-        nil
-      else
-        String.to_integer(cell)
-      end
+      if cell == " ", do: nil, else: String.to_integer(cell)
     end)
     |> Enum.chunk(9)
   end
-
-  def map(string) when is_binary(string) do
+  def to_board(string) when is_binary(string) do
     String.codepoints(string)
     |> Enum.reduce([], fn(cell, acc) -> 
-      if cell == "\n" || cell == 10 do
-        acc
-      else
-        acc ++ [ cell ]
-      end
+      if cell == "\n" || cell == 10, do: acc, else: acc ++ [ cell ]
     end)
-    |> map
+    |> to_board
   end
 
   def to_map(list) do
@@ -36,23 +27,9 @@ defmodule Sudoku do
     end)
   end
 
-  def to_list(map) do
-    map
-    |> Map.keys
-    |> Enum.sort
-    |> Enum.map(fn(this_key) -> map[this_key] end)
-    |> Enum.chunk(9)
-  end
-
   defp row_to_s(row) do
     row
-    |> Enum.map(fn(cell) ->
-      if cell == nil do
-        " "
-      else
-        cell
-      end
-    end) 
+    |> Enum.map(fn(cell) -> if cell == nil, do: " ", else: cell end) 
     |> List.insert_at(6,"|")
     |> List.insert_at(3,"|")
     |> Enum.join("")
@@ -61,92 +38,81 @@ defmodule Sudoku do
   def to_s(list) do
     list
     |> cells_with_index
-    |> Enum.map(fn([_,_,value]) -> value end)
+    |> Enum.map(fn([_,cell]) -> cell end)
     |> Enum.chunk(9)
     |> Enum.map(fn(row) -> row_to_s(row) end)
     |> Enum.join("\n")
   end
 
-  def cells_with_index(list) do
-    to_map(list)
+  def cells_with_index(board) do
+    board
     |> Map.keys
     |> Enum.sort
-    |> Enum.map(fn(key) ->
-      [row_index, column_index, _ ] = key
-      [row_index, column_index, to_map(list)[key]]
-    end)
+    |> Enum.map(fn(key) -> [key, board[key]] end)
   end
 
-  def unsolved?(board) when is_list(board), do: unsolved?(to_map(board))
   def unsolved?(board) do
     board
     |> Map.values
     |> Enum.any?(fn(value) -> value == nil end)
   end
 
-
-  def values(list) do
-    mapped_list = to_map(list)
-    values(Map.keys(mapped_list), list)
-  end
-  def values(cell_addresses, list) do
-    to_map(list)
+  def values(board), do: values(Map.keys(board), board)
+  def values(cell_addresses, board) do
+    board
     |> Map.take(cell_addresses)
     |> Map.values
     |> Enum.sort
   end
 
-  def row(list, number) do 
-    to_map(list)
+  def row(board, number) do 
+    board
     |> Map.keys
     |> Enum.filter( fn([row,_,_]) -> row == number end)
-    |> values(list)
+    |> values(board)
   end
 
-  def column(list, number) do 
-    to_map(list)
+  def column(board, number) do 
+    board
     |> Map.keys
     |> Enum.filter( fn([_,column,_]) -> column == number end)
-    |> values(list)
+    |> values(board)
   end
 
-  def block(list, row, column) do
-    block(list,div(row,3) * 3 + div(column,3) )
-  end
-  def block(list, number) do
-    to_map(list)
+  def block(board, row, column), do: block(board,div(row,3) * 3 + div(column,3) )
+  def block(board, number) do
+    board
     |> Map.keys
     |> Enum.filter( fn([_,_,block]) -> block == number end)
-    |> values(list)
+    |> values(board)
   end
 
-  def blank_positions(list) do
-    to_map(list)
+  def blank_positions(board) do
+    board
     |> Map.keys
-    |> Enum.filter(fn( key ) -> to_map(list)[key] == nil end)
+    |> Enum.filter(fn( key ) -> board[key] == nil end)
   end
 
-  def fill_cell(list) do
-    p = possibilities(list, { :cell, fillable_cell(list) }) |> hd
-    to_map(list)
-    |> Map.put(fillable_cell(list), p )
-    |> to_list
+  def fill_cell(board) do
+    p = possibilities(board, { :cell, fillable_cell(board) }) |> hd
+    board
+    |> Map.put(fillable_cell(board), p )
   end
 
-  def fillable_cell(list) do
-    list
+  def fillable_cell(board) do
+    board
     |> blank_positions
     |> Enum.find( fn([row, column, _]) ->
-      possibilities(list, { :cell, row, column }) |> length == 1
+      possibilities(board, { :cell, row, column }) |> length == 1
     end)
   end
 
   def possibilities(list), do: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] -- list
-  def possibilities(list, { :cell, [row, column,_] } ) do
-    list |> possibilities({ :cell, row, column })
+  def possibilities(cell, { :cell, [row, column,_] } ) do
+    cell |> possibilities({ :cell, row, column })
   end
-  def possibilities(list, { :cell, row, column }) do
-    row(list,row) ++ column(list,column) ++ block(list,row,column) |> possibilities
+  def possibilities(cell, { :cell, row, column }) do
+    row(cell,row) ++ column(cell,column) ++ block(cell,row,column) |> possibilities
   end
 
 end
