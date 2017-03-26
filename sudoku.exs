@@ -2,16 +2,12 @@ defmodule Sudoku do
 
   def to_board(raw_data) when is_list(raw_data) do
     raw_data
-    |> Enum.map( fn(cell) ->
-      if cell == " ", do: nil, else: String.to_integer(cell)
-    end)
+    |> Enum.map( fn " " -> nil; cell -> String.to_integer(cell) end)
     |> Enum.chunk(9)
   end
   def to_board(string) when is_binary(string) do
-    String.codepoints(string)
-    |> Enum.reduce([], fn(cell, acc) -> 
-      if cell == "\n" || cell == 10, do: acc, else: acc ++ [ cell ]
-    end)
+    Regex.scan(~r{[^\n]}, string)
+    |> List.flatten
     |> to_board
   end
 
@@ -29,60 +25,46 @@ defmodule Sudoku do
 
   defp row_to_s(row) do
     row
-    |> Enum.map(fn(cell) -> if cell == nil, do: " ", else: cell end) 
-    |> List.insert_at(6,"|")
-    |> List.insert_at(3,"|")
-    |> Enum.join("")
+    |> Enum.map(fn nil -> " "; cell -> cell end) 
+      |> List.insert_at(6,"|")
+      |> List.insert_at(3,"|")
+      |> Enum.join("")
   end
 
   def to_s(list) do
     list
-    |> cells_with_index
-    |> Enum.map(fn([_,cell]) -> cell end)
+    |> Map.keys
+    |> Enum.sort
+    |> Enum.map(fn(key) -> (list[key]) end)
     |> Enum.chunk(9)
     |> Enum.map(&(row_to_s(&1)))
     |> Enum.join("\n")
   end
 
-  def cells_with_index(board) do
-    board
-    |> Map.keys
-    |> Enum.sort
-    |> Enum.map(&([&1, board[&1]]))
-  end
-
   def unsolved?(board) do
-    values(Map.keys(board), board)
+    board
+    |> Map.values
     |> Enum.any?(&(&1 == nil))
   end
 
-  def values(cell_addresses, board) do
-    board
-    |> Map.take(cell_addresses)
-    |> Map.values
-    |> Enum.sort
+  def row(board, row) do 
+    fetch(board, fn [^row, _column, _block ] -> true; _key -> false end)
   end
 
-  def row(board, number) do 
-    board
-    |> Map.keys
-    |> Enum.filter( fn([row,_,_]) -> row == number end)
-    |> values(board)
-  end
-
-  def column(board, number) do 
-    board
-    |> Map.keys
-    |> Enum.filter( fn([_,column,_]) -> column == number end)
-    |> values(board)
+  def column(board, column) do 
+    fetch(board, fn [_row, ^column, _block ] -> true; _key -> false end)
   end
 
   def block(board, row, column), do: block(board,div(row,3) * 3 + div(column,3) )
-  def block(board, number) do
+  def block(board, block) do
+    fetch(board, fn [_row, _column, ^block ] -> true; _key -> false end)
+  end
+
+  defp fetch(board, matcher) do
     board
     |> Map.keys
-    |> Enum.filter( fn([_,_,block]) -> block == number end)
-    |> values(board)
+    |> Enum.filter(matcher)
+    |> Enum.map(fn address -> Map.fetch!(board, address) end)
   end
 
   def blank_positions(board) do
@@ -92,16 +74,17 @@ defmodule Sudoku do
   end
 
   def fill_cell(board) do
-    p = possibilities(board, { :cell, fillable_cell(board) }) |> hd
-    board
-    |> Map.put(fillable_cell(board), p )
+    possibilities(board, { :cell, fillable_cell(board) })
+    |> Enum.map(fn(possibility) -> 
+      Map.put(board, fillable_cell(board), possibility )
+    end)
   end
 
   def fillable_cell(board) do
     board
     |> blank_positions
-    |> Enum.find( fn([row, column, _]) ->
-      possibilities(board, { :cell, row, column }) |> length == 1
+    |> Enum.min_by( fn([row, column, _]) ->
+      possibilities(board, { :cell, row, column }) |> length
     end)
   end
 
@@ -111,6 +94,14 @@ defmodule Sudoku do
   end
   def possibilities(cell, { :cell, row, column }) do
     row(cell,row) ++ column(cell,column) ++ block(cell,row,column) |> possibilities
+  end
+
+  def invalid?(board) do
+    board
+    |> blank_positions
+    |> Enum.any?(fn(position) -> 
+      possibilities(board,{:cell, position } ) |> length == 0
+    end)
   end
 
 end

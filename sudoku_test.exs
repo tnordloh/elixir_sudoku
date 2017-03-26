@@ -20,9 +20,23 @@ defmodule SudokuTemplate do
     eight_after_insert = [ nil,   3,   6, 7,   5,   9,   4, nil,   8 ]
     base  = [zero, one, two, three, four, five, six, seven, eight]
     base_after_insert  = [zero, one, two, three, four, five, six, seven, eight_after_insert]
+    invalid_zero  = [nil,  6,  1,  4,  7,  9,  5,  3,  8]
+    invalid_one   = [nil,nil,  2,nil,  7,nil,nil,  7,nil]
+    invalid_two   = [nil,  4,  7,  2,nil,  3,nil,  6,  1]
+    invalid_three = [nil,nil,nil,nil,  9,  5,nil,  1,nil]
+    invalid_four  = [nil,nil,nil,nil,  8,nil,  9,  2,  3]
+    invalid_five  = [nil,  9,  3,  7,nil,nil,  6,nil,nil]
+    invalid_six   = [  1,  7,  6,nil,nil,nil,  3,  8,  5]
+    invalid_seven = [  3,  8,  9,nil,  1,  6,  2,nil,nil]
+    invalid_eight = [nil,nil,nil,  8,  3,  7,nil,  9,nil]
+    invalid_map = [invalid_zero,invalid_one,invalid_two,
+                   invalid_three,invalid_four,invalid_five,
+                   invalid_six,invalid_seven,invalid_eight]
     { :ok, base: base,
       base_after_insert: base_after_insert,
-      base_string: base_string }
+      base_string: base_string,
+      invalid_map: invalid_map
+    }
   end
 end
 
@@ -30,13 +44,19 @@ defmodule SudokuTest do
   use ExUnit.Case
   use SudokuTemplate, async: true
 
+  test "can identify an invalid map?", %{invalid_map: invalid_map} do
+    assert Sudoku.to_map(invalid_map) |> Sudoku.invalid? == true
+  end
+
   test "get row 0 from base sudoku board", %{base: base} do
-    assert Sudoku.row(Sudoku.to_map(base),0) == Enum.fetch(base,0) |> elem(1) |> Enum.sort
+    assert Sudoku.row(Sudoku.to_map(base),0) |> Enum.sort ==
+      Enum.fetch(base,0) |> elem(1) |> Enum.sort
   end
 
   test "get column 0 from base sudoku board", %{base: base} do
-    column = [ 9, nil, nil, nil, 5, nil, nil, 1, nil ] |> Enum.sort
-    assert Sudoku.column(Sudoku.to_map(base),0) == column
+    actual =  Sudoku.column(Sudoku.to_map(base),0) |> Enum.sort
+    expected = [ 9, nil, nil, nil, 5, nil, nil, 1, nil ] |> Enum.sort
+    assert actual == expected
   end
 
   test "get block 2 (0 indexed, reading left to right)", %{base: base} do 
@@ -49,14 +69,8 @@ defmodule SudokuTest do
     assert Sudoku.block(Sudoku.to_map(base),0,6)|>Enum.sort == block
   end
 
-  test "can stream cells with indexes" do
-    zero  = [[ 9,   nil, 4  ]]
-    assert Sudoku.cells_with_index(Sudoku.to_map(zero)) ==
-      [ [[0,0,0],9], [[0,1,0],nil], [[0,2,0],4]  ]
-  end
-
   test "can fill a cell with only one variable to fill", %{base: base, base_after_insert: base_after_insert} do
-    assert Sudoku.fill_cell(Sudoku.to_map(base)) == base_after_insert |> Sudoku.to_map
+    assert Sudoku.fill_cell(Sudoku.to_map(base)) == [base_after_insert |> Sudoku.to_map ]
   end
 
   test "can identify an unsolved puzzle", %{base: base} do

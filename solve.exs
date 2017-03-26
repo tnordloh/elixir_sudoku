@@ -1,20 +1,24 @@
 Code.load_file("sudoku.exs", __DIR__)
 
-{:ok, file} = File.read "sudoku_map.txt"
+IO.inspect System.argv
+{:ok, file} = File.read hd(System.argv)
 
 IO.puts(file)
-sudoku_map = Sudoku.to_board(file) |> Sudoku.to_map
-
+sudoku_map = [Sudoku.to_board(file) |> Sudoku.to_map]
 
 defmodule Solver do
-  def solve(list) do
+  def solve([first_map|other_maps]) do
     IO.puts("solving...")
-    list = Sudoku.fill_cell(list)
-    if Sudoku.unsolved?(list) do
-      IO.puts Sudoku.to_s(list)
-      solve(list)
+    if Sudoku.invalid?(first_map) do
+      solve(other_maps)
     else
-      solve(list, true)
+      solutions = Sudoku.fill_cell(first_map)
+      if Sudoku.unsolved?(hd(solutions)) do
+        IO.puts Sudoku.to_s(hd(solutions))
+        solve(solutions ++ other_maps)
+      else
+        solve(hd(solutions), true)
+      end
     end
   end
   def solve(list, solved) do
