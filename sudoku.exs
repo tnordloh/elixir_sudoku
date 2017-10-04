@@ -11,6 +11,10 @@ defmodule Sudoku do
     |> to_board
   end
 
+  def block_index(row,column) do
+    div(row,3) * 3 + div(column,3)
+  end
+
   def to_map(list) do
     list
     |> List.flatten
@@ -18,7 +22,7 @@ defmodule Sudoku do
     |> Enum.reduce(%{}, fn({ cell, cell_index }, acc) -> 
       row = div(cell_index,9)
       column = rem(cell_index,9)
-      block = div(row,3) * 3 + div(column,3)
+      block = block_index(row,column)
       Map.merge(acc, %{ [row, column, block] => cell } )
     end)
   end
@@ -47,16 +51,18 @@ defmodule Sudoku do
     |> Enum.any?(&(&1 == nil))
   end
 
-  def row(board, row) do 
+  def row_values(board, row) do 
     fetch(board, fn [^row, _column, _block ] -> true; _key -> false end)
   end
 
-  def column(board, column) do 
+  def column_values(board, column) do 
     fetch(board, fn [_row, ^column, _block ] -> true; _key -> false end)
   end
 
-  def block(board, row, column), do: block(board,div(row,3) * 3 + div(column,3) )
-  def block(board, block) do
+  def block_values(board, row, column) do
+    block_values(board,block_index(row,column) )
+  end
+  def block_values(board, block) do
     fetch(board, fn [_row, _column, ^block ] -> true; _key -> false end)
   end
 
@@ -89,11 +95,15 @@ defmodule Sudoku do
   end
 
   def possibilities(list), do: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] -- list
-  def possibilities(cell, { :cell, [row, column,_] } ) do
-    cell |> possibilities({ :cell, row, column })
+  def possibilities(board, { :cell, [row, column,_] } ) do
+    board 
+    |> possibilities({ :cell, row, column })
   end
-  def possibilities(cell, { :cell, row, column }) do
-    row(cell,row) ++ column(cell,column) ++ block(cell,row,column) |> possibilities
+  def possibilities(board, { :cell, row, column }) do
+    row_values(board,row) ++
+    column_values(board,column) ++
+    block_values(board,row,column)
+    |> possibilities
   end
 
   def invalid?(board) do

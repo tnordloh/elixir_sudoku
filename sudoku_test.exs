@@ -49,28 +49,42 @@ defmodule SudokuTest do
   end
 
   test "get row 0 from base sudoku board", %{base: base} do
-    assert Sudoku.row(Sudoku.to_map(base),0) |> Enum.sort ==
+    assert Sudoku.row_values(Sudoku.to_map(base),0) |> Enum.sort ==
       Enum.fetch(base,0) |> elem(1) |> Enum.sort
   end
 
   test "get column 0 from base sudoku board", %{base: base} do
-    actual =  Sudoku.column(Sudoku.to_map(base),0) |> Enum.sort
+    actual =  Sudoku.column_values(Sudoku.to_map(base),0) |> Enum.sort
     expected = [ 9, nil, nil, nil, 5, nil, nil, 1, nil ] |> Enum.sort
     assert actual == expected
   end
 
+  test "get block address, from row,column" do
+    assert Sudoku.block_index(0,6) == 2
+  end
+
   test "get block 2 (0 indexed, reading left to right)", %{base: base} do 
     block = Enum.sort([ nil, nil, 2, 6, 5, 4, 9, 7, 1 ])
-    assert Enum.sort(Sudoku.block(Sudoku.to_map(base),2)) == block
+    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),2  )) == block
   end
 
-  test "get block that contains cell 0,6", %{base: base} do
+  test "get block that contains cell 0,6 to 2,8", %{base: base} do
     block = [ nil, nil, 2, 6, 5, 4, 9, 7, 1 ] |> Enum.sort
-    assert Sudoku.block(Sudoku.to_map(base),0,6)|>Enum.sort == block
+    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),0,6)) == block
+    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),1,7)) == block
+    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),2,8)) == block
+    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),0,7)) == block
+    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),1,7)) == block
+    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),2,7)) == block
+    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),0,8)) == block
+    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),1,8)) == block
+    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),2,8)) == block
   end
 
-  test "can fill a cell with only one variable to fill", %{base: base, base_after_insert: base_after_insert} do
-    assert Sudoku.fill_cell(Sudoku.to_map(base)) == [base_after_insert |> Sudoku.to_map ]
+  test "can fill a cell with only one variable to fill",
+  %{base: base, base_after_insert: base_after_insert} do
+    assert Sudoku.fill_cell(Sudoku.to_map(base)) == 
+      [base_after_insert |> Sudoku.to_map ]
   end
 
   test "can identify an unsolved puzzle", %{base: base} do
@@ -88,7 +102,8 @@ defmodule SudokuTest do
 
   test "find blank positions" do
     zero  = [[ 9,   nil, 4,   nil, 7,   nil, nil, nil, 2   ]]
-    assert Sudoku.blank_positions(Sudoku.to_map(zero)) == [ [0,1,0], [0,3,1], [0,5,1], [0,6,2], [0,7,2] ]
+    assert Sudoku.blank_positions(Sudoku.to_map(zero)) ==
+      [ [0,1,0], [0,3,1], [0,5,1], [0,6,2], [0,7,2] ]
   end
 
   test "correctly return no blank positions" do
@@ -96,13 +111,13 @@ defmodule SudokuTest do
     assert Sudoku.blank_positions(Sudoku.to_map(zero)) == []
   end
 
-  test "returns missing numbers row/column/block", state do
-    assert Sudoku.possibilities(Sudoku.to_map(state[:base]), {:cell, 0, 6 })  == [8]
+  test "returns missing numbers row/column/block", %{base: base} do
+    assert Sudoku.possibilities(Sudoku.to_map(base), {:cell, 0, 6 })  == [8]
   end
 
-  test "can read a string into a sudoku map", %{base: base, base_string: base_string } do
+  test "can read a string into a sudoku map",
+  %{base: base, base_string: base_string } do
     assert Sudoku.to_board(base_string)  == base
   end
-
 
 end
