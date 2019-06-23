@@ -2,7 +2,7 @@ defmodule Sudoku do
 
   def to_board(raw_data) when is_list(raw_data) do
     raw_data
-    |> Enum.map( fn " " -> nil; cell -> String.to_integer(cell) end)
+    |> Enum.map(fn " " -> nil; cell -> String.to_integer(cell) end)
     |> Enum.chunk(9)
   end
   def to_board(string) when is_binary(string) do
@@ -59,9 +59,6 @@ defmodule Sudoku do
     fetch(board, fn [_row, ^column, _block ] -> true; _key -> false end)
   end
 
-  def block_values(board, row, column) do
-    block_values(board,block_index(row,column) )
-  end
   def block_values(board, block) do
     fetch(board, fn [_row, _column, ^block ] -> true; _key -> false end)
   end
@@ -89,20 +86,16 @@ defmodule Sudoku do
   def fillable_cell(board) do
     board
     |> blank_positions
-    |> Enum.min_by( fn([row, column, _]) ->
-      possibilities(board, { :cell, row, column }) |> length
+    |> Enum.min_by( fn(cell_address) ->
+      possibilities(board, { :cell, cell_address }) |> length
     end)
   end
 
   def possibilities(list), do: [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ] -- list
-  def possibilities(board, { :cell, [row, column,_] } ) do
-    board 
-    |> possibilities({ :cell, row, column })
-  end
-  def possibilities(board, { :cell, row, column }) do
+  def possibilities(board, { :cell, [row, column, block] } ) do
     row_values(board,row) ++
     column_values(board,column) ++
-    block_values(board,row,column)
+    block_values(board,block)
     |> possibilities
   end
 
@@ -112,6 +105,33 @@ defmodule Sudoku do
     |> Enum.any?(fn(position) -> 
       possibilities(board,{:cell, position } ) |> length == 0
     end)
+  end
+
+  def cell_relationship(cell_1, cell_2) do
+    cond do 
+      cell_1 == cell_2 ->
+        { cell_1, :same_cell }
+      hd(cell_1) == hd(cell_2) ->
+        { hd(cell_1), :same_row }
+      hd(tl(cell_1)) == hd(tl(cell_2)) ->
+        { hd(tl(cell_1)), :same_column }
+      List.last(cell_1) == List.last(cell_2) ->
+        {List.last(cell_1), :same_block}
+      true ->
+        :no_relationship
+    end
+  end
+
+  def locked?(board, cell_1, cell_2) do
+    relationship = cell_relationship(cell_1, cell_2)
+    row = 0
+    common_cells = board
+    |> Map.keys
+    |> Enum.filter(fn [^row, _column, _block ] -> true; _key -> false end)
+    |> Enum.sort 
+    common_cells -- [cell_1, cell_2] #-- blank_positions(board)
+    # common_possibilities = possibilities(board, { :cell, cell_1 }) && possibilities(board, { :cell, cell_2})
+    # { relationship, common_possibilities }
   end
 
 end

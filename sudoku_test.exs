@@ -32,10 +32,23 @@ defmodule SudokuTemplate do
     invalid_map = [invalid_zero,invalid_one,invalid_two,
                    invalid_three,invalid_four,invalid_five,
                    invalid_six,invalid_seven,invalid_eight]
+    xwing_zero  = [nil,  2,nil,nil,nil,nil,nil,  9,  4]
+    xwing_one   = [  7,  6,nil,  9,  1,nil,nil,  5,nil]
+    xwing_two   = [nil,  9,nil,nil,nil,  2,nil,  8,  1]
+    xwing_three = [nil,  7,nil,nil,  5,nil,nil,  1,nil]
+    xwing_four  = [nil,nil,nil,  7,nil,  9,nil,nil,nil]
+    xwing_five  = [nil,  8,nil,nil,  3,  1,nil,  6,  7]
+    xwing_six   = [  2,  4,nil,  1,nil,nil,nil,  7,nil]
+    xwing_seven = [nil,  1,nil,nil,  9,nil,nil,  4,  5]
+    xwing_eight = [  9,nil,nil,nil,nil,nil,  1,nil,nil]
+    xwing_map = [xwing_zero,xwing_one,xwing_two,
+                   xwing_three,xwing_four,xwing_five,
+                   xwing_six,xwing_seven,xwing_eight]
     { :ok, base: base,
       base_after_insert: base_after_insert,
       base_string: base_string,
-      invalid_map: invalid_map
+      invalid_map: invalid_map,
+      xwing_map: xwing_map
     }
   end
 end
@@ -66,19 +79,6 @@ defmodule SudokuTest do
   test "get block 2 (0 indexed, reading left to right)", %{base: base} do 
     block = Enum.sort([ nil, nil, 2, 6, 5, 4, 9, 7, 1 ])
     assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),2  )) == block
-  end
-
-  test "get block that contains cell 0,6 to 2,8", %{base: base} do
-    block = [ nil, nil, 2, 6, 5, 4, 9, 7, 1 ] |> Enum.sort
-    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),0,6)) == block
-    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),1,7)) == block
-    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),2,8)) == block
-    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),0,7)) == block
-    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),1,7)) == block
-    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),2,7)) == block
-    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),0,8)) == block
-    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),1,8)) == block
-    assert Enum.sort(Sudoku.block_values(Sudoku.to_map(base),2,8)) == block
   end
 
   test "can fill a cell with only one variable to fill",
@@ -112,12 +112,32 @@ defmodule SudokuTest do
   end
 
   test "returns missing numbers row/column/block", %{base: base} do
-    assert Sudoku.possibilities(Sudoku.to_map(base), {:cell, 0, 6 })  == [8]
+    assert Sudoku.possibilities(Sudoku.to_map(base), {:cell, [0, 6, 2] })  == [8]
   end
 
   test "can read a string into a sudoku map",
   %{base: base, base_string: base_string } do
     assert Sudoku.to_board(base_string)  == base
+  end
+
+  test "can identify how two cells are related" do
+    assert Sudoku.cell_relationship([0, 0, 0], [0, 0, 0]) == { [0, 0, 0], :same_cell   }
+    assert Sudoku.cell_relationship([0, 0, 0], [0, 2, 0]) == { 0,         :same_row    }
+    assert Sudoku.cell_relationship([0, 1, 0], [1, 1, 0]) == { 1,         :same_column }
+    assert Sudoku.cell_relationship([0, 0, 0], [1, 1, 0]) == { 0,         :same_block  }
+  end
+
+  test "can identify a locked pair", %{xwing_map: xwing_map} do
+    map = Sudoku.to_map(xwing_map)
+    assert Sudoku.locked?(map, [0, 0, 0], [0, 2, 0]) == { :true,  1 }
+  end
+
+  test "can find an xwing", %{xwing_map: xwing_map} do
+    map = Sudoku.to_map(xwing_map)
+    assert Sudoku.possibilities(map, {:cell, [4, 0, 3] })  == [1, 3, 4, 5, 6]
+    assert map |> Sudoku.invalid? == false
+    assert map |> Sudoku.unsolved? == true
+    # assert Sudoku.blank_positions(map) == [[0,3,0] ]
   end
 
 end
